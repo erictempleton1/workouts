@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <string>
 #include "sqlite3.h"
 
@@ -10,7 +11,31 @@ int callback(void *NotUsed, int argc, char **argv, char **colName) {
     return 0;
 }
 
-void addExercise() {}
+std::string allExercises() {
+    return "SELECT * FROM exercises;";
+}
+
+std::string addExercise() {
+    std::string name, date;
+    int reps, sets, weight;
+    std::cout << "Exercise name: ";
+    std::cin >> name;
+    
+    std::cout << "Exercise reps: ";
+    std::cin >> reps;
+
+    std::cout << "Exercise sets: ";
+    std::cin >> sets;
+
+    std::cout << "Exercise weight: ";
+    std::cin >> weight;
+
+    std::cout << "Exercise date [yyyy-mm-dd]: ";
+    std::cin >> date;
+    return "INSERT INTO exercises (name, reps, sets, weight, exercise_date) VALUES ('"
+            + name + '\'' + ", " + std::to_string(reps) + ", " + std::to_string(4) + ", "
+            + std::to_string(0) + ", " + '\'' + date + '\'' + ");";
+}
 
 void getDayExercise() {}
 
@@ -37,28 +62,33 @@ int main(int argc, char *argv[]) {
                                         "reps INTEGER, " \
                                         "sets INTEGER, " \
                                         "weight INTEGER, " \
-                                        "exercise_date, DATE, " \
+                                        "exercise_date DATETIME, " \
                                         "date_added DATETIME DEFAULT CURRENT_TIMESTAMP);";
     rc = sqlite3_exec(db, createTableStatement.c_str(), callback, 0, &errMsg);
     if (rc != SQLITE_OK) {
         std::cout << "Error executing supplied statement: " << errMsg << std::endl;
         return 1;
     }
-    
-    rc = sqlite3_exec(db, argv[1], callback, 0, &errMsg);
+
+    std::string command = argv[1];
+    std::string sqlStatement;
+    std::transform(command.begin(), command.end(), command.begin(), ::tolower);
+    if (command == "all") {
+        sqlStatement = allExercises();
+    } else if (command == "add") {
+        sqlStatement = addExercise();
+    } else {
+        std::cout << "Unknown command: " << command << std::endl;
+        return 1;
+    }
+
+    rc = sqlite3_exec(db, sqlStatement.c_str(), callback, NULL, &errMsg);
     if (rc != SQLITE_OK) {
         std::cout << "Error executing supplied statement: " << errMsg << std::endl;
         return 1;
     }
 
-    std::cout << "Completed statement execution: "  << argv[1] << std::endl;
+    std::cout << "Completed statement execution: "  << sqlStatement << std::endl;
     std::cout << "Closing database connection" << std::endl;
     sqlite3_close(db);
 }
-
-// "CREATE TABLE IF NOT EXISTS exercises (id INTEGER PRIMARY KEY, name TEXT, reps INTEGER, sets INTEGER, weight INTEGER, date_added DATETIME DEFAULT CURRENT_TIMESTAMP);"
-// "INSERT INTO exercises (name, reps, sets, weight) VALUES ('Shoulder press', 6, 4, 45);"
-// "SELECT * FROM exercises"
-// g++ .\workouts.cpp  -o ..\workouts.exe -I "C:\Sqlite3\" -L "C:\Sqlite3\" -lsqlite3
-
-// todo - create cmd line interface for adding new workouts and other tasks!
