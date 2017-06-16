@@ -3,6 +3,7 @@
 #include <string>
 #include "sqlite3.h"
 
+
 int callback(void *NotUsed, int argc, char **argv, char **colName) {
     for (int i = 0; i < argc; i++) {
         std::cout << colName[i] << ": " << argv[i] << std::endl;
@@ -37,7 +38,19 @@ std::string addExercise() {
             + std::to_string(0) + ", " + '\'' + date + '\'' + ");";
 }
 
-void getDayExercise() {}
+std::string getDayExercise() {
+    std::string date;
+    std::cout << "Exercise date [yyyy-mm-dd]: ";
+    std::cin >> date;
+    return "SELECT * FROM exercises WHERE date == " + '\'' + date + '\'' + ";";
+}
+
+std::string customQuery() {
+    std::string customQuery;
+    std::cout << "Enter custom query: ";
+    std::cin >> customQuery;
+    return customQuery;
+}
 
 int main(int argc, char *argv[]) {
     sqlite3 *db;
@@ -77,6 +90,10 @@ int main(int argc, char *argv[]) {
         sqlStatement = allExercises();
     } else if (command == "add") {
         sqlStatement = addExercise();
+    //} else if (command == "getdate") {
+    //    sqlStatement = getDayExercise();
+    } else if (command == "customquery") {
+        sqlStatement = customQuery();
     } else {
         std::cout << "Unknown command: " << command << std::endl;
         return 1;
@@ -84,7 +101,7 @@ int main(int argc, char *argv[]) {
 
     rc = sqlite3_exec(db, sqlStatement.c_str(), callback, NULL, &errMsg);
     if (rc != SQLITE_OK) {
-        std::cout << "Error executing supplied statement: " << errMsg << std::endl;
+        std::cout << "Error executing supplied statement: " << sqlStatement << " " << errMsg << std::endl;
         return 1;
     }
 
